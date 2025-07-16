@@ -374,35 +374,5 @@ func (v *ValidOwner) CheckSatisfied(ctx context.Context) error {
 			return fmt.Errorf("unknown error occurred while calling GitHub: %v", err)
 		}
 	}
-
-	if !v.checkScopes {
-		// If the GitHub client uses a GitHub App, the headers won't have scope information.
-		// TODO: Call the https://api.github.com/app/installations and check if the `permission` field has `"members": "read"
-		return nil
-	}
-
-	return v.checkRequiredScopes(resp.Header)
-}
-
-func (*ValidOwner) checkRequiredScopes(header http.Header) error {
-	gotScopes := strings.Split(header.Get(scopeHeader), ",")
-	presentScope := map[github.Scope]struct{}{}
-	for _, scope := range gotScopes {
-		scope = strings.TrimSpace(scope)
-		presentScope[github.Scope(scope)] = struct{}{}
-	}
-
-	var missing []string
-	for reqScope := range reqScopes {
-		if _, found := presentScope[reqScope]; found {
-			continue
-		}
-		missing = append(missing, string(reqScope))
-	}
-
-	if len(missing) > 0 {
-		return fmt.Errorf("missing scopes: %q", strings.Join(missing, ", "))
-	}
-
 	return nil
 }
